@@ -1,452 +1,375 @@
-# Minimal FastAPI PostgreSQL template
-
-[![Live example](https://img.shields.io/badge/live%20example-https%3A%2F%2Fminimal--fastapi--postgres--template.rafsaf.pl-blueviolet)](https://minimal-fastapi-postgres-template.rafsaf.pl/)
-[![License](https://img.shields.io/github/license/rafsaf/minimal-fastapi-postgres-template)](https://github.com/rafsaf/minimal-fastapi-postgres-template/blob/main/LICENSE)
-[![Python 3.14](https://img.shields.io/badge/python-3.14-blue)](https://docs.python.org/3/whatsnew/3.14.html)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Tests](https://github.com/rafsaf/minimal-fastapi-postgres-template/actions/workflows/tests.yml/badge.svg)](https://github.com/rafsaf/minimal-fastapi-postgres-template/actions/workflows/tests.yml)
-
-_Check out online example: [https://minimal-fastapi-postgres-template.rafsaf.pl](https://minimal-fastapi-postgres-template.rafsaf.pl), it's 100% code used in template (docker image) with added my domain and https only._
-
-- [Minimal FastAPI PostgreSQL template](#minimal-fastapi-postgresql-template)
-  - [About](#about)
-  - [Features](#features)
-  - [Quickstart](#quickstart)
-    - [1. Create repository from a template](#1-create-repository-from-a-template)
-    - [2. Install dependencies with uv](#2-install-dependencies-with-uv)
-    - [3. Run app](#3-run-app)
-    - [4. Activate pre-commit](#4-activate-pre-commit)
-    - [5. Running tests](#5-running-tests)
-  - [Step by step example - POST and GET endpoints](#step-by-step-example---post-and-get-endpoints)
-    - [1. Create new app](#1-create-new-app)
-    - [2. Create SQLAlchemy model](#2-create-sqlalchemy-model)
-    - [3. Import new models.py file in alembic env.py](#3-import-new-modelspy-file-in-alembic-envpy)
-    - [4. Create and apply alembic migration](#4-create-and-apply-alembic-migration)
-    - [5. Create request and response schemas](#5-create-request-and-response-schemas)
-    - [6. Create endpoints](#6-create-endpoints)
-    - [7. Add Pet model to tests factories](#7-add-pet-model-to-tests-factories)
-    - [8. Create new test file](#8-create-new-test-file)
-    - [9. Write tests](#9-write-tests)
-  - [Design choices](#design-choices)
-    - [Dockerfile](#dockerfile)
-    - [Registration](#registration)
-    - [Delete user endpoint](#delete-user-endpoint)
-    - [JWT and refresh tokens](#jwt-and-refresh-tokens)
-    - [Writing scripts / cron](#writing-scripts--cron)
-    - [Docs URL](#docs-url)
-    - [CORS](#cors)
-    - [Allowed Hosts](#allowed-hosts)
-  - [License](#license)
+# SweetSpot Glucometer Project
 
 ## About
 
-If you are curious about latest changes and rationale, read 2026 update blog post: [Update of minimal-fastapi-postgres-template to version 7.0.0](https://rafsaf.pl/blog/2026/02/07/update-of-minimal-fastapi-postgres-template-to-version-7.0.0/).
+SweetSpot is a computer-dependent electrochemical glucose sensing prototype designed to evaluate whether a commercial glucose test strip, paired with an IO Rodeostat potentiostat, can be used to measure glucose concentration through chronoamperometry.
 
-Enjoy!
+The long-term goal of this project is to develop a low-cost and accessible glucometer system that can measure glucose concentration, process the signal, and display the result in real time. The project is being developed in stages, beginning with a laptop-based prototype for sensing validation and eventually progressing toward a standalone embedded device.
 
-## Features
+At its current stage, the system successfully demonstrates electrochemical signal acquisition, data processing, and calibration framework development. However, the sensing model has not yet been validated for reliable glucose prediction across repeated measurements.
 
-- [x] Template repository.
-- [x] [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) 2.0, async queries, best possible autocompletion support.
-- [x] PostgreSQL 18 database under [asyncpg](https://github.com/MagicStack/asyncpg) interface.
-- [x] Full [Alembic](https://github.com/alembic/alembic) migrations setup (also in unit tests).
-- [x] Secure and tested setup for [PyJWT](https://github.com/jpadilla/pyjwt) and [bcrypt](https://github.com/pyca/bcrypt).
-- [x] Ready to go Dockerfile with [uvicorn](https://www.uvicorn.org/) webserver.
-- [x] [uv](https://docs.astral.sh/uv/getting-started/installation/), [mypy](https://github.com/python/mypy), [pre-commit](https://github.com/pre-commit/pre-commit) hooks with [ruff](https://github.com/astral-sh/ruff).
-- [x] Perfect pytest asynchronous test setup and full coverage.
+---
 
-![template-fastapi-minimal-openapi-example](https://rafsaf.pl/blog/2026/02/07/update-of-minimal-fastapi-postgres-template-to-version-7.0.0/minimal-fastapi-postgres-template-2026-02-07-version-7.0.0.png)
+## Project Goals
 
-## Quickstart
+The project was designed to build a system that can:
 
-### 1. Create repository from a template
+- run a chronoamperometry measurement on a commercial glucose test strip
+- extract a meaningful electrochemical feature from the current response
+- convert that feature into glucose concentration using an experimentally derived calibration curve
+- display the result digitally in real time
 
-See [docs](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) or just use git clone.
+The development plan includes two major stages:
 
-### 2. Install dependencies with [uv](https://docs.astral.sh/uv/getting-started/installation/)
+1. **Computer-dependent prototype** for validating sensing and calibration  
+2. **Standalone embedded prototype** for integrated measurement and display
 
-```bash
-cd your_project_name
+---
 
-uv sync
+## Why This Project Matters
 
-```
+A glucometer is a portable medical device used to measure blood glucose concentration. It is essential for diabetes monitoring and management, especially for individuals who need frequent readings to guide daily decisions.
 
-Uv should automatically install Python version currently required by template (>=3.14) or use existing Python installation if you already have it.
+As diabetes prevalence continues to rise, the need for affordable and accessible glucose monitoring tools becomes more urgent. This challenge is particularly important in underserved urban communities, where access to regular testing and early diagnosis may be limited. Our project is motivated by the idea that a lower-cost electrochemical sensing platform could eventually support broader glucose awareness and improve access to screening.
 
-### 3. Run app
+---
 
-```bash
-make up
+## Scientific and Engineering Basis
 
-```
+Electrochemical glucometers work by coupling a selective biochemical reaction to an electrical measurement.
 
-Refer to `Makefile` to see shortcut (`apt install build-essential` - on linux)
+Commercial glucose test strips typically rely on **glucose oxidase**, which reacts selectively with glucose in the sample. This reaction produces an electroactive species that can be detected at the electrode surface. When the potentiostat applies a fixed potential, oxidation at the working electrode generates a measurable current. That current is then used as the sensing signal.
 
-If you want to work without it, this should do:
+This project uses **chronoamperometry**, where the potential is stepped to a fixed value and the current is measured over time. Under ideal diffusion-controlled conditions, the expected behavior is described by the **Cottrell equation**, which predicts that current decreases with the inverse square root of time and is proportional to analyte concentration at a fixed time point.
 
-```bash
-docker compose up -d
+Because of this relationship, features such as:
 
-alembic upgrade head
+- maximum current
+- current at a fixed time
+- current decay behavior
 
-uvicorn app.main:app --reload
+can, in principle, be used to estimate glucose concentration.
 
-```
+This theoretical framework guided our calibration strategy and feature selection.
 
-You should then use `git init` (if needed) to initialize git repository and access OpenAPI spec at [http://localhost:8000/](http://localhost:8000/) by default. See last section for customizations.
+---
 
-### 4. Activate pre-commit
+## Current Project Status
 
-[pre-commit](https://pre-commit.com/) is de facto standard now for pre push activities like isort or black or its nowadays replacement ruff.
+At this stage, the project functions as a **computer-dependent electrochemical sensing prototype**.
 
-Refer to `.pre-commit-config.yaml` file to see my current opinionated choices.
+### What is working
 
-```bash
-# Shortcut
-make lint
+- electrochemical signal acquisition with the IO Rodeostat
+- Python-based data collection in Jupyter Notebook
+- current-versus-time visualization
+- export of raw data to CSV
+- construction of calibration relationships from experimental data
 
-```
+### What is not yet working
 
-Full commands
+- reliable glucose concentration prediction
+- validated sensing model across repeated measurements
+- Arduino communication
+- OLED display output
+- standalone device operation
 
-```bash
-# Install pre-commit
-pre-commit install --install-hooks
+Although the system can successfully run chronoamperometry and collect current data, the measured signal does not yet translate into sufficiently accurate and reproducible glucose predictions.
 
-# Run on all files
-pre-commit run --all-files
+---
 
-```
+## Progress Log
 
-### 5. Running tests
+## February 12, 2026
 
-Note, it will create databases for session and run tests in many processes by default (using pytest-xdist) to speed up execution, based on how many CPU are available in environment.
+We connected the IO Rodeostat potentiostat to a laptop and performed an initial chronoamperometry test using a commercial glucose test strip and legacy connector leads.
 
-For more details about initial database setup, see logic `app/conftest.py` file, especially `fixture_setup_new_test_database` function. Pytest configuration is also in `[tool.pytest.ini_options]` in `pyproject.toml`.
+The purpose of this first experiment was to confirm that the Rodeostat could apply a potential step and record a measurable transient current response over time. At this stage, the goal was not yet accurate glucose prediction. Instead, the focus was on verifying that the hardware and software could produce a usable electrochemical signal.
 
-Moreover, there is coverage pytest plugin with required code coverage level 100%.
+During this phase, we developed a Python script in Jupyter Notebook to interface with the Rodeostat, capture the current response, and generate current-versus-time plots. This established the software foundation for later calibration, visualization, and signal analysis.
 
-```bash
-# see all pytest configuration flags in pyproject.toml
-pytest
+From an engineering standpoint, this phase served as a feasibility test of the acquisition system. Before quantitative sensing can be evaluated, the instrumentation must first demonstrate that it can consistently produce and record a usable signal.
 
-# or 
-make test
+## February 26, 2026
 
-```
+We prepared a full set of standard glucose solutions for calibration and improved the data pipeline used to process measurements.
 
-## Step by step example - POST and GET endpoints
+The Python workflow was updated to:
 
-I always enjoy to have some kind of an example in templates (even if I don't like it much, _some_ parts may be useful and save my time...), so let's create two example endpoints:
+- generate current-versus-time plots
+- export raw experimental data to CSV files
+- improve reproducibility and recordkeeping for later analysis
 
-- `POST` endpoint `/pets/create` for creating `Pets` with relation to currently logged `User`
-- `GET` endpoint `/pets/me` for fetching all user's pets.
+At this stage, we collected the first full datasets for high and very high glucose concentrations. This marked the transition from basic signal verification to quantitative sensor characterization.
 
-### 1. Create new app
+The electrode configuration used during testing was:
 
-Add `app/pets` folder and `app/pets/__init__.py`.
+- **working electrode** = gray
+- **reference electrode** = white
+- **counter electrode** = black
 
-### 2. Create SQLAlchemy model
+Maintaining a consistent electrode configuration was essential for preserving the validity of the measurements.
 
-We will add `Pet` model to `app/pets/models.py`.
+## March 4, 2026
 
-```python
-# app/pets/models.py
+We completed the initial concentration measurements across all prepared glucose standards.
 
-import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column
+This was an important milestone because it provided the first full dataset for comparing electrochemical responses across concentrations. With these data in hand, the project shifted from signal collection to calibration analysis.
 
-from app.core.models import Base
+At this point, we began evaluating whether the measured current contained sufficient and reproducible information to distinguish among glucose concentrations in a physically meaningful way.
 
+## March 5, 2026 — Initial Calibration Curve
 
-class Pet(Base):
-    __tablename__ = "pets_pet"
+Using the initial dataset, we constructed our first calibration relationship between measured current and glucose concentration:
 
-    id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
-    user_id: Mapped[str] = mapped_column(
-        sa.ForeignKey("auth_user.user_id", ondelete="CASCADE"),
-    )
-    pet_name: Mapped[str] = mapped_column(sa.String(50), nullable=False)
+**Glucose concentration (mM) = 1.1978 × (max current in μA) − 0.4567**
 
-```
+This equation represented the first working mapping from sensor output to predicted glucose concentration. In principle, once the maximum current from a run was measured, the calibration equation could be used to estimate glucose concentration.
 
-Note, we are using super powerful SQLAlchemy feature here - `Mapped` and `mapped_column` were first introduced in SQLAlchemy 2.0, if this syntax is new for you, read carefully [what's new](https://docs.sqlalchemy.org/en/20/changelog/whatsnew_20.html) part of documentation.
+The use of current as the sensing variable was grounded in chronoamperometric theory. Under ideal diffusion-controlled behavior, the Cottrell equation predicts that current should scale with concentration. Because of this, features derived from the current response, such as maximum current or current at a specified time, were reasonable candidates for calibration.
 
-### 3. Import new models.py file in alembic env.py
+At first, this relationship appeared promising. However, later validation showed that the calibration did not remain reliable across repeated measurements or across the full concentration range.
 
-Without this step, alembic won't be able to follow changes in new `models.py` file. In `alembic/env.py` import new file
+---
 
-```python
-# alembic/env.py
+## Key Findings
 
-(...) 
-# import other models here
-import app.pets.models  # noqa
+## Breakdown at High Concentrations
 
-(...)
+We observed that the calibration relationship becomes unreliable at very high glucose concentrations, especially in extreme diabetic ranges. In those cases, the response becomes nonlinear, and current no longer scales predictably with concentration.
 
-```
+This behavior is consistent with the limitations of commercial glucose test strips, which are generally designed to operate within typical physiological glucose ranges rather than extreme concentrations.
 
-### 4. Create and apply alembic migration
+Possible causes include:
 
-```bash
-### Use below commands in root folder in virtualenv ###
+- enzyme saturation within the strip chemistry
+- mass transport limitations near the electrode surface
+- deviation from ideal diffusion-controlled behavior
+- nonlinear reaction kinetics
 
-# if you see FAILED: Target database is not up to date.
-# first use alembic upgrade head
+From a chemical engineering perspective, this is a classic example of a system leaving its ideal operating regime. Once the assumptions behind the model no longer hold, the calibration relationship breaks down.
 
-# Create migration with alembic revision
-alembic revision --autogenerate -m "create_pet_model"
+## Validation Testing
 
+To determine whether the system could reliably predict glucose concentration, we performed repeated validation testing and compared multiple feature extraction methods.
 
-# File similar to "2022050949_create_pet_model_44b7b689ea5f.py" should appear in `/alembic/versions` folder
+We evaluated:
 
+- **peak current**
+- **steady-state or fixed-time current**
 
-# Apply migration using alembic upgrade
-alembic upgrade head
+Although calibration curves could be generated for both methods, neither one produced predictions that were sufficiently accurate or reproducible across new trials.
 
-# (...)
-# INFO  [alembic.runtime.migration] Running upgrade d1252175c146 -> 44b7b689ea5f, create_pet_model
-```
+This result suggests that the issue is not limited to one particular feature extraction method. Instead, it indicates a broader limitation in the sensing system itself.
 
-PS. Note, alembic is configured in a way that it work with async setup and also detects specific column changes if using `--autogenerate` flag.
+---
 
-### 5. Create request and response schemas
+## Engineering Interpretation of Failure
 
-```python
-# app/pets/schemas.py
+The fact that both feature extraction approaches failed suggests that the system is not behaving according to the idealized diffusion-controlled model assumed by the Cottrell equation.
 
-from pydantic import BaseModel, ConfigDict
+Several possible explanations are being considered:
 
+### 1. Strip–Instrumentation Mismatch
 
-class PetCreateRequest(BaseModel):
-    pet_name: str
+Commercial glucose test strips are designed to work with proprietary timing windows, voltage protocols, and internal electronics. The simple chronoamperometric step applied by the Rodeostat may not match the intended strip operating conditions.
 
+### 2. Mass Transport Limitations
 
-class PetResponse(BaseModel):
-    id: int
-    pet_name: str
-    user_id: str
+The Cottrell equation assumes a predictable diffusion layer and well-defined transport behavior. If glucose transport is inconsistent or affected by strip geometry, convection, or internal structure, the signal may vary independently of concentration.
 
-    model_config = ConfigDict(from_attributes=True)
+### 3. Nonlinear Reaction Kinetics
 
-```
+The strip chemistry may introduce nonlinearities through enzyme kinetics, intermediates, or saturation effects. If the reaction is not first-order with respect to glucose, the current will not scale linearly with concentration.
 
-### 6. Create endpoints
+### 4. Signal Instability
 
-```python
-# app/pets/views.py
+Small variations in strip condition, contact quality, or timing may strongly affect the measured current. Since both calibration methods depend on signal consistency, this variability reduces predictive reliability.
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+---
 
-from app.auth.dependencies import get_current_user
-from app.auth.models import User
-from app.core import database_session
-from app.pets.models import Pet
-from app.pets.schemas import PetCreateRequest, PetResponse
+## Hardware Verification
 
-router = APIRouter()
+We also considered whether the Rodeostat itself might be the source of the problem.
 
+To investigate this, we:
 
-@router.post(
-    "/create",
-    response_model=PetResponse,
-    status_code=status.HTTP_201_CREATED,
-    description="Creates new pet. Only for logged users.",
-)
-async def create_new_pet(
-    data: PetCreateRequest,
-    session: AsyncSession = Depends(database_session.new_async_session),
-    current_user: User = Depends(get_current_user),
-) -> Pet:
-    new_pet = Pet(user_id=current_user.user_id, pet_name=data.pet_name)
+- confirmed the device setup
+- checked wiring and connections
+- inspected the Rodeostat for obvious faults
 
-    session.add(new_pet)
-    await session.commit()
+No clear hardware issue was identified. This supports the conclusion that the main limitation is not a fundamental device failure, but rather incompatibility between the sensing method and the strip measurement conditions.
 
-    return new_pet
+---
 
+## System Architecture
 
-@router.get(
-    "/me",
-    response_model=list[PetResponse],
-    status_code=status.HTTP_200_OK,
-    description="Get list of pets for currently logged user.",
-)
-async def get_all_my_pets(
-    session: AsyncSession = Depends(database_session.new_async_session),
-    current_user: User = Depends(get_current_user),
-) -> list[Pet]:
-    pets = await session.scalars(
-        select(Pet).where(Pet.user_id == current_user.user_id).order_by(Pet.pet_name)
-    )
+Even in its current state, the project follows a modular sensing pipeline:
 
-    return list(pets.all())
+### Sensor Layer
+Commercial glucose test strip produces current through an electrochemical reaction.
 
-```
+### Acquisition Layer
+IO Rodeostat applies the voltage protocol and records current over time.
 
-Now we need to add newly created router to `main.py` app.
+### Processing Layer
+Python in Jupyter Notebook performs:
 
-```python
-# main.py
+- data collection
+- signal visualization
+- feature extraction
+- calibration analysis
 
-(...)
+### Output Layer (Current)
+Laptop-based plots and predicted glucose values.
 
-from app.pets.views import router as pets_router
+### Output Layer (Planned)
+Arduino plus OLED display for real-time standalone readout.
 
-(...)
+---
 
-app.include_router(pets_router, prefix="/pets", tags=["pets"])
+## Prototype Plan
 
-```
+## Prototype 1: Computer-Dependent System
 
-### 7. Add Pet model to tests factories
+In the first prototype, the laptop serves as the main control and processing platform. The Rodeostat performs the measurement, Python processes the signal, and the eventual plan is for the laptop to send the calculated glucose value to an Arduino for display.
 
-File `app/tests/factories.py` contains `User` model factory already. Every new DB model should also have it, as it really simplify things later (when you have more models and relationships).
+### Purpose
 
-```python
-# app/tests/factories.py
-(...)
+- validate electrochemical sensing performance
+- simplify data processing during early development
+- reduce embedded system complexity
+- support rapid iteration and debugging
 
-from app.pets.models import Pet
+## Prototype 2: Fully Standalone Embedded System
 
-(...)
+The second prototype would move all major functions to embedded hardware. In that version, the microcontroller would handle signal acquisition, feature extraction, glucose calculation, and OLED display directly.
 
-class PetFactory(SQLAlchemyFactory[Pet]):
-    pet_name = Use(Faker().first_name)
+### Purpose
 
-```
+- demonstrate full hardware and software integration
+- eliminate dependence on external computing
+- create a portable and self-contained platform
+- establish a path toward future miniaturization
 
-### 8. Create new test file
+At present, progression to Prototype 2 is being deferred until the sensing model is validated.
 
-Create folder `app/pet/tests` and inside files `__init__.py` and eg. `test_pets_views.py`.
+---
 
-### 9. Write tests
+## Preliminary Calculations
 
-We will write two really simple tests into new file `test_pets_views.py`
+### Blood Simulant
 
-```python
-# app/pet/tests/test_pets_views.py
+To approximate the electrolyte content of blood, a 100 mL NaCl stock solution at 140 mmol/L was prepared.
 
-from fastapi import status
-from httpx import AsyncClient
+\[
+(140 \text{ mmol/L}) \left(\frac{1 \text{ mol}}{1000 \text{ mmol}}\right)\left(\frac{58.44 \text{ g}}{1 \text{ mol}}\right)\left(\frac{100 \text{ mL}}{1000 \text{ mL}}\right)=0.818 \text{ g NaCl}
+\]
 
-from app.auth.models import User
-from app.main import app
-from app.tests.factories import PetFactory
+### Glucose Standards
 
+Glucose standards were prepared by adding known masses of glucose to 25 mL of stock solution. These standards were used to generate calibration data and evaluate how the electrochemical response changed with concentration.
 
-async def test_create_new_pet(
-    client: AsyncClient, default_user_headers: dict[str, str], default_user: User
-) -> None:
-    response = await client.post(
-        app.url_path_for("create_new_pet"),
-        headers=default_user_headers,
-        json={"pet_name": "Tadeusz"},
-    )
-    assert response.status_code == status.HTTP_201_CREATED
+---
 
-    result = response.json()
-    assert result["user_id"] == default_user.user_id
-    assert result["pet_name"] == "Tadeusz"
+## Market Relevance and Application
 
+The long-term target market for this device is underserved and low-income populations, particularly in urban environments where diabetes prevalence is high and access to healthcare may be limited.
 
-async def test_get_all_my_pets(
-    client: AsyncClient,
-    default_user_headers: dict[str, str],
-    default_user: User,
-) -> None:
-    pet1 = await PetFactory.create_async(
-        user_id=default_user.user_id, pet_name="Alfred"
-    )
-    pet2 = await PetFactory.create_async(
-        user_id=default_user.user_id, pet_name="Tadeusz"
-    )
+Potential user groups include:
 
-    response = await client.get(
-        app.url_path_for("get_all_my_pets"),
-        headers=default_user_headers,
-    )
-    assert response.status_code == status.HTTP_200_OK
+- adults at elevated risk for Type 2 diabetes
+- low-income individuals and families
+- undiagnosed or pre-diabetic individuals
+- community clinics and nonprofit screening programs
+- students, uninsured individuals, and older adults who need simpler low-cost tools
 
-    assert response.json() == [
-        {
-            "user_id": pet1.user_id,
-            "pet_name": pet1.pet_name,
-            "id": pet1.id,
-        },
-        {
-            "user_id": pet2.user_id,
-            "pet_name": pet2.pet_name,
-            "id": pet2.id,
-        },
-    ]
+The larger design goal is not to create a premium consumer medical device, but rather to explore the feasibility of a low-cost sensing system that could support broader glucose awareness and access.
 
-```
+---
 
-## Design choices
+## SWOT Analysis
 
-There are couple decisions to make and changes that can/should be done after fork. I try to describe below things I consider most opinionated.
+### Strengths
 
-### Dockerfile
+- strong medical relevance and recurring demand
+- real-time signal acquisition and feedback
+- portable sensing concept
+- user-oriented design potential
+- strong interdisciplinary combination of electrochemistry, instrumentation, and data analysis
 
-This template has by default included `Dockerfile` with [Uvicorn](https://www.uvicorn.org/) webserver, because it's simple in direct relation to FastAPI and great ease of configuration. You should be able to run container(s) (over :8000 port) and then need to setup the proxy, loadbalancer, with https enbaled, so the app stays behind it. Ye, **it's safe**(as much as anything is safe), you don't need anything except prefered LB. Other webservers to consider: [Nginx Unit](https://unit.nginx.org/), [Daphne](https://github.com/django/daphne), [Hypercorn](https://pgjones.gitlab.io/hypercorn/index.html).
+### Weaknesses
 
-### Registration
+- sensing accuracy is not yet validated
+- current calibration relationships are not reproducible enough
+- dependence on laptop-based processing
+- hardware integration remains incomplete
+- small-scale development limits practical deployment
 
-Is open. You would probably want to either remove it altogether or change.
+### Opportunities
 
-### Delete user endpoint
+- rising diabetes prevalence increases need for affordable monitoring tools
+- future optimization could improve manufacturability and reduce cost
+- embedded electronics and biosensor advances create pathways for refinement
+- strong potential for educational, screening, and community-health applications
 
-Rethink `delete_current_user`, maybe you don't need it.
+### Threats
 
-### JWT and refresh tokens
+- competition from established commercial glucometers
+- regulatory barriers for medical sensing devices
+- liability concerns associated with inaccurate glucose prediction
+- possible incompatibility between commercial strips and non-proprietary instrumentation
 
-By using `/auth/access-token` user can exchange username + password for JWT. Refresh tokens is saved **in database table**. I've seen a lot of other, not always secure or sane setups. It's up to you if you want to change it to be also JWT (which seems to be popular), just one small note: It's `good` design if one can revoke all or preferably some refresh tokens. It's much `worse` design if one cannot. On the other hand, it's fine not to have option to revoke access tokens (as they are shortlived).
+---
 
-### Writing scripts / cron
+## Future Work
 
-Very rarely app has not some kind of background tasks. Feel free to use `new_script_async_session` if you need to have access to database outside of FastAPI. Cron can be simply: new file, async task with session (doing something), wrapped by `asyncio.run(script_func())`.
+Our immediate focus is to resolve the sensing limitation before proceeding with display integration.
 
-### Docs URL
+### Next steps
 
-Docs page is simply `/` (by default in FastAPI it is `/docs`). You can change it completely for the project, just as title, version, etc.
+- test alternative voltage protocols that better match strip operation
+- explore additional signal features such as integrated current or decay fitting
+- improve signal processing through smoothing and baseline correction
+- investigate strip-specific operating requirements
+- evaluate whether commercial strips are fundamentally compatible with Rodeostat-based sensing
 
-```python
-app = FastAPI(
-    title="minimal fastapi postgres template",
-    version="7.0.0",
-    description="https://github.com/rafsaf/minimal-fastapi-postgres-template",
-    openapi_url="/openapi.json",
-    docs_url="/",
-)
-```
+Once a reliable sensing model is established, the next phase will include:
 
-### CORS
+- Python-to-Arduino serial communication
+- OLED display integration
+- transition toward standalone embedded operation
 
-If you are not sure what are CORS for, follow [developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS). Most frontend frameworks nowadays operate on `http://localhost:3000` thats why it's included in `BACKEND_CORS_ORIGINS` in `.env` file, before going production be sure to include your frontend domain there, like `https://my-frontend-app.example.com`.
+---
 
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[str(origin) for origin in config.settings.BACKEND_CORS_ORIGINS],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
+## Final Project Definition
 
-### Allowed Hosts
+The current system is best described as a:
 
-This middleware prevents HTTP Host Headers attack, you should put here your server IP or (preferably) full domain under which it's accessible like `example.com`. By default `"localhost", "127.0.0.1", "0.0.0.0"`
+**computer-dependent electrochemical sensing prototype with unresolved measurement accuracy limitations**
 
-```python
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.settings.ALLOWED_HOSTS)
-```
+It successfully demonstrates:
 
-## License
+- signal acquisition
+- data processing
+- calibration construction
 
-The code is under MIT License. It's here for educational purposes, created mainly to have a place where up-to-date Python and FastAPI software lives. Do whatever you want with this code.
+It does not yet demonstrate:
+
+- reliable quantitative glucose sensing
+- validated concentration prediction
+- standalone real-time hardware display
+
+That makes the current project a successful sensing-platform prototype, but not yet a validated glucometer.
+
+---
+
+## Current Repository / Report Contents
+
+- project background and motivation
+- scientific basis of electrochemical glucose sensing
+- progress log and calibration development
+- failure analysis and engineering interpretation
+- prototype roadmap
+- preliminary market and SWOT analysis
+- next-step development plan
